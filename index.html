@@ -1,13 +1,11 @@
 <!-- Chosen Palette: energetic & playful -->
-<!-- Application Structure Plan: A single-page, scrolling narrative SPA was designed to tell the story of the meal plan's strategy. The structure flows from a new, upfront "Nutrition Guide" section providing foundational context, then to high-level nutritional balance (protein), specific problem-solving (rice refusal), developmental goals (self-feeding), and finally a chronological overview (weekly goals). This thematic, top-down approach helps the user understand the *why* behind the plan. An interactive meal plan viewer and shopping list provide actionable tools. -->
+<!-- Application Structure Plan: A single-page, scrolling narrative SPA. The structure flows from a "Nutrition Guide", to high-level analysis (protein, rice strategy, self-feeding), to the core interactive tools: a weekly meal planner and a new weekly shopping list. This was chosen to provide both strategic insight and practical, actionable tools in one place. User feedback drove the addition of a recipe modal and weekly shopping lists to enhance usability. -->
 <!-- Visualization & Content Choices: 
-- Nutrition Guide: Goal: Inform. Viz: Styled HTML cards/divs. Justification: Added based on user feedback to provide crucial context on portion sizes and meal patterns upfront. This grounds the entire report in expert recommendations. Method: HTML/CSS. CONFIRMED: NO SVG.
-- Protein Distribution: Goal: Compare composition. Viz: Donut Chart. Justification: Best for showing parts-of-a-whole distribution of the 6 key protein sources. Library: Chart.js/Canvas. CONFIRMED: NO SVG.
-- Rice Refusal Strategy: Goal: Compare categories. Viz: Horizontal Bar Chart. Justification: Effectively compares the frequency of different carbohydrate meal types. The inclusion of "Rice + Side Dish" format is now a key part of the strategy, and the chart visualizes its balanced inclusion. Library: Chart.js/Canvas. CONFIRMED: NO SVG.
-- Self-Feeding Habit: Goal: Inform & show change. Viz: Big Number Stat & Line Chart. Justification: The big number provides a powerful, immediate summary (42%), while the line chart shows the consistent application of this strategy week-over-week. Library: HTML/CSS & Chart.js/Canvas. CONFIRMED: NO SVG.
-- Weekly Plan Flow: Goal: Organize & show process. Viz: HTML/CSS Timeline. Justification: A timeline is the most intuitive method to display a chronological process with distinct stages. Method: Styled HTML divs. CONFIRMED: NO SVG/Mermaid. 
-- Interactive Meal Plan: Goal: Organize & Inform. Viz: Interactive HTML Table/Grid with hover tooltips. Justification: A tabbed weekly view is user-friendly. Tooltips provide ingredient details reflecting the 170-180g portion sizes, corrected for accuracy based on cooking transformations. Method: HTML/CSS/JS. CONFIRMED: NO SVG.
-- Shopping List: Goal: Organize & Inform. Viz: Responsive HTML Table/Grid. Justification: Makes the report actionable by providing a practical shopping list. Method: Styled HTML divs. CONFIRMED: NO SVG.-->
+- Nutrition Guide: Goal: Inform. Viz: Styled HTML cards. Justification: Provides crucial context on portion sizes upfront. Method: HTML/CSS. CONFIRMED: NO SVG.
+- Analytical Charts (Protein, Carb, Self-Feeding): Goal: Compare/Inform. Viz: Donut, Bar, Line charts. Justification: These visualize the core strategies of the meal plan effectively. Library: Chart.js/Canvas. CONFIRMED: NO SVG.
+- Weekly Plan Flow: Goal: Organize. Viz: HTML/CSS Timeline. Justification: Intuitively shows the month's progression. Method: Styled HTML divs. CONFIRMED: NO SVG/Mermaid. 
+- Interactive Meal Plan with Recipe Modal: Goal: Organize & Instruct. Viz: Interactive HTML Table with modal pop-ups. Justification: A major UX improvement. Clicking a meal now provides a full, detailed recipe including seasonings, making the plan directly actionable for cooking. Method: HTML/CSS/JS. CONFIRMED: NO SVG.
+- Interactive Weekly Shopping List: Goal: Organize & Inform. Viz: Tabbed HTML list. Justification: A practical, week-by-week shopping guide, complete with quantities and costs. This supports the user's weekly planning and shopping routine. Method: HTML/CSS/JS. CONFIRMED: NO SVG.-->
 <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
 <!DOCTYPE html>
 <html lang="ko">
@@ -38,31 +36,23 @@
                 height: 400px;
             }
         }
-        .week-btn.active {
+        .tab-btn.active {
             background-color: #073B4C;
             color: white;
+            border-color: #073B4C;
         }
         .meal-cell {
             cursor: pointer;
-            position: relative;
+            transition: background-color 0.2s;
         }
-        #meal-tooltip {
-            position: absolute;
-            display: none;
-            background-color: #2d3748;
-            color: white;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.875rem;
-            z-index: 50;
-            pointer-events: none;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            border: 1px solid #4a5568;
-            min-width: 150px;
+        .meal-cell:hover {
+            background-color: #eff6ff;
         }
-        #meal-tooltip ul {
-            list-style: disc;
-            padding-left: 1.25rem;
+        #recipe-modal-overlay {
+            transition: opacity 0.3s ease;
+        }
+        #recipe-modal-content {
+            transition: transform 0.3s ease;
         }
     </style>
 </head>
@@ -169,70 +159,54 @@
             </section>
             
             <section class="lg:col-span-3 bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-2xl font-bold text-[#073B4C] mb-4">전체 식단표 보기</h2>
-                <p class="text-gray-600 mb-6">아래 버튼을 눌러 주차별 상세 식단을 확인하세요. 메뉴에 마우스를 올리면 필요 재료를 볼 수 있습니다.</p>
+                <h2 class="text-2xl font-bold text-[#073B4C] mb-4">전체 식단표 및 레시피</h2>
+                <p class="text-gray-600 mb-6">아래 버튼으로 주차를 선택하세요. 메뉴를 클릭하면 간단한 레시피를 볼 수 있습니다.</p>
                 <div class="flex space-x-2 mb-6 border-b pb-4">
-                    <button id="btn-week-1" class="week-btn px-4 py-2 rounded-lg font-semibold transition-colors duration-200 active">1주차</button>
-                    <button id="btn-week-2" class="week-btn px-4 py-2 rounded-lg font-semibold transition-colors duration-200">2주차</button>
-                    <button id="btn-week-3" class="week-btn px-4 py-2 rounded-lg font-semibold transition-colors duration-200">3주차</button>
-                    <button id="btn-week-4" class="week-btn px-4 py-2 rounded-lg font-semibold transition-colors duration-200">4주차</button>
+                    <button data-week="1" class="tab-btn week-btn px-4 py-2 rounded-lg font-semibold transition-colors duration-200 border-2 border-transparent active">1주차</button>
+                    <button data-week="2" class="tab-btn week-btn px-4 py-2 rounded-lg font-semibold transition-colors duration-200 border-2 border-transparent">2주차</button>
+                    <button data-week="3" class="tab-btn week-btn px-4 py-2 rounded-lg font-semibold transition-colors duration-200 border-2 border-transparent">3주차</button>
+                    <button data-week="4" class="tab-btn week-btn px-4 py-2 rounded-lg font-semibold transition-colors duration-200 border-2 border-transparent">4주차</button>
                 </div>
                 <div id="meal-plan-display">
                 </div>
             </section>
 
             <section class="lg:col-span-3 bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-2xl font-bold text-[#118AB2] mb-4">🛒 한 달 식재료 구매 목록</h2>
-                <p class="text-gray-600 mb-6">아래 목록은 한 달 기준이며, 주간 단위로 신선하게 구매하시는 것을 권장합니다. 가격은 구매처에 따라 변동될 수 있습니다.</p>
-                
-                <div class="space-y-6">
-                    <div>
-                        <h3 class="text-xl font-bold text-[#073B4C] mb-3 border-b pb-2">곡류 및 기본 재료</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-2 text-gray-700">
-                            <span><strong>쌀/잡곡:</strong> 약 3kg</span>
-                            <span><strong>아기용 김:</strong> 1-2팩</span>
-                            <span><strong>아기용 조미료 (간장, 소금 등)</strong></span>
-                            <span><strong>밀가루/부침가루:</strong> 1봉</span>
-                            <span><strong>참기름/식용유:</strong> 1병</span>
-                            <span class="font-bold text-right md:col-start-3">소계: 약 35,000 ~ 45,000원</span>
-                        </div>
-                    </div>
-
-                    <div>
-                        <h3 class="text-xl font-bold text-[#073B4C] mb-3 border-b pb-2">육류, 생선 및 단백질</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-2 text-gray-700">
-                           <span><strong>소고기 (안심/우둔살):</strong> 약 700g</span>
-                           <span><strong>닭고기 (안심/가슴살):</strong> 약 700g</span>
-                           <span><strong>돼지고기 (안심/등심):</strong> 약 500g</span>
-                           <span><strong>흰살생선 (대구, 가자미):</strong> 약 400g</span>
-                           <span><strong>새우:</strong> 약 150g</span>
-                           <span><strong>계란:</strong> 1판 (15구)</span>
-                           <span><strong>두부/연두부:</strong> 2-3모</span>
-                           <span class="font-bold text-right md:col-start-3 md:mt-4">소계: 약 80,000 ~ 100,000원</span>
-                        </div>
-                    </div>
-
-                    <div>
-                        <h3 class="text-xl font-bold text-[#073B4C] mb-3 border-b pb-2">채소 및 과일</h3>
-                        <p class="text-sm text-gray-500 mb-4">기본 채소(애호박, 당근, 양파, 감자, 버섯류, 브로콜리, 시금치)를 바탕으로 제철 채소를 추가하세요.</p>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-2 text-gray-700">
-                           <span><strong>기본 채소류:</strong> 각 1~2개씩</span>
-                           <span><strong>제철 채소/과일:</strong> 주간 단위 구매</span>
-                           <span class="font-bold text-right md:col-start-3">소계: 약 50,000 ~ 70,000원</span>
-                        </div>
-                    </div>
+                <h2 class="text-2xl font-bold text-[#118AB2] mb-4">🛒 주차별 장보기 목록</h2>
+                <p class="text-gray-600 mb-6">매주 필요한 식재료의 양과 예상 비용입니다. 주간 단위로 신선하게 구매하세요.</p>
+                 <div class="flex space-x-2 mb-6 border-b pb-4">
+                    <button data-week="1" class="tab-btn shopping-btn px-4 py-2 rounded-lg font-semibold transition-colors duration-200 border-2 border-transparent active">1주차</button>
+                    <button data-week="2" class="tab-btn shopping-btn px-4 py-2 rounded-lg font-semibold transition-colors duration-200 border-2 border-transparent">2주차</button>
+                    <button data-week="3" class="tab-btn shopping-btn px-4 py-2 rounded-lg font-semibold transition-colors duration-200 border-2 border-transparent">3주차</button>
+                    <button data-week="4" class="tab-btn shopping-btn px-4 py-2 rounded-lg font-semibold transition-colors duration-200 border-2 border-transparent">4주차</button>
                 </div>
-
-                <div class="mt-8 pt-4 border-t-2 text-right">
-                    <p class="text-gray-600 text-lg">한 달 식재료 총 예상 비용</p>
-                    <p class="text-3xl font-bold text-[#073B4C]">약 165,000원 ~ 215,000원</p>
+                <div id="shopping-list-display">
                 </div>
             </section>
             
         </main>
     </div>
     
-    <div id="meal-tooltip"></div>
+    <div id="recipe-modal-overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-40 opacity-0"></div>
+    <div id="recipe-modal" class="fixed inset-0 flex items-center justify-center hidden z-50 p-4">
+        <div id="recipe-modal-content" class="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[80vh] transform scale-95">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h3 id="recipe-title" class="text-2xl font-bold text-[#073B4C]"></h3>
+                <button id="close-recipe-modal" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[calc(80vh-120px)]">
+                <div class="mb-4">
+                    <h4 class="font-bold text-lg text-[#118AB2] mb-2">재료</h4>
+                    <ul id="recipe-ingredients" class="list-disc list-inside text-gray-700"></ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-lg text-[#118AB2] mb-2">조리법</h4>
+                    <ol id="recipe-steps" class="list-decimal list-inside text-gray-700 space-y-2"></ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -363,84 +337,135 @@
             
             const mealPlanData = {
                 1: [
-                    { day: '월', breakfast: { name: '소고기 애호박 주먹밥', ingredients: ['생쌀 50g', '소고기 30g', '애호박 30g'] }, lunch: { name: '닭고기 완두콩 밥볼', ingredients: ['생쌀 50g', '닭안심 30g', '완두콩 25g'] }, dinner: { name: '대구살구이+채소볶음+밥', ingredients: ['생쌀 35g', '대구살 40g', '파프리카 25g', '버섯 25g'] } },
-                    { day: '화', breakfast: { name: '돼지고기 가지 볶음밥', ingredients: ['생쌀 50g', '돼지고기 30g', '가지 30g'] }, lunch: { name: '두부계란찜+밥', ingredients: ['생쌀 35g', '두부 50g', '계란 1개'] }, dinner: { name: '소고기 미역국+밥', ingredients: ['생쌀 35g', '소고기 35g', '건미역 5g'] } },
-                    { day: '수', breakfast: { name: '닭고기 버섯 크림 리조또', ingredients: ['생쌀 50g', '닭안심 30g', '버섯 25g', '아기치즈'] }, lunch: { name: '대구살 스테이크+밥', ingredients: ['생쌀 35g', '대구살 40g', '시금치 30g'] }, dinner: { name: '돼지고기 채소볶음+밥', ingredients: ['생쌀 35g', '돼지고기 35g', '양파 20g', '당근 20g'] } },
-                    { day: '목', breakfast: { name: '소고기 브로콜리 덮밥', ingredients: ['생쌀 50g', '소고기 30g', '브로콜리 30g'] }, lunch: { name: '닭고기 카레라이스', ingredients: ['생쌀 50g', '닭안심 30g', '감자 20g', '당근 15g'] }, dinner: { name: '애호박전+밥', ingredients: ['생쌀 35g', '애호박 70g', '계란물'] } },
-                    { day: '금', breakfast: { name: '돼지고기 두부 밥볼', ingredients: ['생쌀 50g', '돼지고기 20g', '두부 30g'] }, lunch: { name: '소고기 무조림+밥', ingredients: ['생쌀 35g', '소고기 35g', '무 40g'] }, dinner: { name: '가자미구이+밥', ingredients: ['생쌀 35g', '순살가자미 1토막 (50g)'] } },
-                    { day: '토', breakfast: { name: '닭고기 시금치 주먹밥', ingredients: ['생쌀 50g', '닭안심 30g', '시금치 25g'] }, lunch: { name: '돼지고기 짜장밥', ingredients: ['생쌀 50g', '돼지고기 30g', '양파 15g', '애호박 15g'] }, dinner: { name: '소고기 찹스테이크+밥', ingredients: ['생쌀 35g', '소고기 40g', '파프리카 20g', '버섯 20g'] } },
-                    { day: '일', breakfast: { name: '계란 덮밥', ingredients: ['생쌀 50g', '계란 1개'] }, lunch: { name: '가족 특식 (백숙)', ingredients: ['닭', '찹쌀 등'] }, dinner: { name: '자유식', ingredients: [] } },
+                    { day: '월', breakfast: { name: '소고기 애호박 주먹밥', ingredients: ['생쌀 50g', '다진 소고기 30g', '애호박 30g', '참기름 약간', '깨소금 약간'], recipe:['1. 쌀은 깨끗이 씻어 30분 이상 불립니다.','2. 다진 소고기는 키친타월로 핏물을 제거합니다.','3. 애호박은 잘게 다집니다.','4. 냄비에 참기름을 살짝 두르고 소고기와 애호박을 볶습니다.','5. 불린 쌀과 물을 넣고 밥솥이나 냄비에서 진밥을 짓습니다.','6. 완성된 밥에 깨소금을 살짝 뿌려 한 입 크기로 뭉칩니다.'] }, lunch: { name: '닭고기 완두콩 밥볼', ingredients: ['생쌀 50g', '닭안심 30g', '완두콩 25g', '다시마 1조각'], recipe:['1. 다시마 1조각을 넣어 육수를 내고 그 물로 밥을 짓습니다.','2. 닭안심은 삶아 잘게 찢고, 완두콩은 부드럽게 익혀 으깹니다.','3. 따뜻한 밥에 준비한 재료를 모두 넣고 섞어 동그랗게 뭉칩니다.'] }, dinner: { name: '대구살구이+채소볶음+밥', ingredients: ['생쌀 35g', '대구살 40g', '파프리카 25g', '버섯 25g', '올리브유 약간', '소금 한 꼬집'], recipe:['1. 쌀을 씻어 밥을 짓습니다.','2. 대구살은 소금 한 꼬집으로 밑간을 합니다.','3. 팬에 올리브유를 두르고 대구살을 노릇하게 굽습니다.','4. 파프리카와 버섯은 아기가 먹기 좋은 크기로 썰어 살짝 볶아 곁들입니다.'] } },
+                    { day: '화', breakfast: { name: '돼지고기 가지 볶음밥', ingredients: ['생쌀 50g', '다진 돼지고기 30g', '가지 30g', '아기 간장 1/2티스푼'], recipe:['1. 가지는 잘게 다지고, 돼지고기는 핏물을 제거합니다.','2. 팬에 기름을 살짝 두르고 돼지고기를 볶다가 가지를 넣고 함께 볶습니다.','3. 미리 지어둔 밥을 넣고 아기 간장으로 간을 맞추며 볶아냅니다.'] }, lunch: { name: '두부계란찜+밥', ingredients: ['생쌀 35g', '두부 50g', '계란 1개', '다시마물 50ml', '참기름 약간'], recipe:['1. 쌀을 씻어 밥을 짓습니다.','2. 두부는 칼등으로 으깨고 계란과 다시마물을 잘 섞어줍니다.','3. 그릇에 참기름을 바르고 반죽을 부어 찜기에서 10~15분간 쪄냅니다.'] }, dinner: { name: '소고기 미역국+밥', ingredients: ['생쌀 35g', '소고기 35g', '자른미역 5g', '참기름 1티스푼', '아기 국간장 약간'], recipe:['1. 쌀을 씻어 밥을 짓습니다.','2. 미역은 물에 불려 잘게 자르고, 소고기는 핏물을 제거합니다.','3. 냄비에 참기름을 두르고 소고기와 미역을 볶습니다.','4. 물을 붓고 푹 끓인 후 아기 국간장으로 간을 합니다.'] } },
+                    { day: '수', breakfast: { name: '닭고기 버섯 크림 리조또', ingredients: ['생쌀 50g', '닭안심 30g', '버섯 25g', '아기치즈 1장', '우유 50ml'], recipe:['1. 닭안심과 버섯은 잘게 다집니다.','2. 냄비에 재료를 볶다가 불린 쌀을 넣고 함께 볶습니다.','3. 물과 우유를 넣고 쌀이 퍼질 때까지 끓입니다.','4. 마지막에 아기치즈를 넣고 녹여 마무리합니다.'] }, lunch: { name: '대구살 스테이크+밥', ingredients: ['생쌀 35g', '대구살 40g', '시금치 30g', '밀가루 1스푼', '계란물 약간'], recipe:['1. 쌀을 씻어 밥을 짓습니다.','2. 대구살과 데친 시금치를 잘게 다져 섞습니다.','3. 밀가루를 살짝 넣어 동그랗게 빚은 후 계란물을 입혀 팬에 굽습니다.'] }, dinner: { name: '돼지고기 채소볶음+밥', ingredients: ['생쌀 35g', '다진 돼지고기 35g', '양파 20g', '당근 20g', '아기 간장 1/2티스푼'], recipe:['1. 쌀을 씻어 밥을 짓습니다.','2. 양파와 당근은 잘게 다집니다.','3. 팬에 기름을 두르고 돼지고기와 채소를 볶다가 아기 간장으로 간을 합니다.'] } },
+                    { day: '목', breakfast: { name: '소고기 브로콜리 덮밥', ingredients: ['생쌀 50g', '다진 소고기 30g', '브로콜리 30g', '전분물 약간'], recipe:['1. 소고기는 핏물을 제거하고 브로콜리는 데쳐서 잘게 다집니다.','2. 팬에 소고기와 브로콜리를 볶다가 다시마물 50ml를 붓고 끓입니다.','3. 전분물을 살짝 풀어 농도를 맞춘 후, 따뜻한 밥 위에 올려줍니다.'] }, lunch: { name: '닭고기 카레라이스', ingredients: ['생쌀 50g', '닭안심 30g', '감자 20g', '당근 15g', '아기용 카레가루'], recipe:['1. 모든 재료를 아기가 먹기 좋은 크기로 작게 썹니다.','2. 냄비에 재료를 넣고 볶다가 물을 붓고 푹 익힙니다.','3. 아기용 카레 가루를 넣고 잘 풀어준 후 밥과 함께 냅니다.'] }, dinner: { name: '애호박전+밥', ingredients: ['생쌀 35g', '애호박 70g', '계란 1개', '밀가루 1스푼'], recipe:['1. 쌀을 씻어 밥을 짓습니다.','2. 애호박은 얇게 채 썰어 밀가루와 계란을 넣고 반죽합니다.','3. 기름을 살짝 두른 팬에 한 입 크기로 부쳐냅니다.'] } },
+                    { day: '금', breakfast: { name: '돼지고기 두부 밥볼', ingredients: ['생쌀 50g', '다진 돼지고기 20g', '두부 30g', '깨소금 약간'], recipe:['1. 돼지고기는 볶아서 익히고, 두부는 으깨 물기를 꼭 짭니다.','2. 따뜻한 밥에 모든 재료와 깨소금을 넣고 잘 섞습니다.','3. 한 입 크기로 동그랗게 뭉칩니다.'] }, lunch: { name: '소고기 무조림+밥', ingredients: ['생쌀 35g', '소고기 35g', '무 40g', '아기 간장 1티스푼'], recipe:['1. 쌀을 씻어 밥을 짓습니다.','2. 소고기와 깍둑 썬 무를 냄비에 담고 물과 아기 간장을 넣어 끓입니다.','3. 무가 부드러워질 때까지 푹 조려냅니다.'] }, dinner: { name: '가자미구이+밥', ingredients: ['생쌀 35g', '순살가자미 1토막 (50g)', '레몬즙 약간'], recipe:['1. 쌀을 씻어 밥을 짓습니다.','2. 가자미에 레몬즙을 살짝 뿌려 비린내를 제거합니다.','3. 기름을 살짝 두른 팬에 앞뒤로 노릇하게 굽습니다.'] } },
+                    { day: '토', breakfast: { name: '닭고기 시금치 주먹밥', ingredients: ['생쌀 50g', '닭안심 30g', '시금치 25g', '참기름 약간'], recipe:['1. 닭안심과 시금치는 데쳐서 잘게 다집니다.','2. 따뜻한 밥에 모든 재료와 참기름을 넣고 잘 섞습니다.','3. 한 입 크기로 뭉치거나 밥틀을 이용해 모양을 냅니다.'] }, lunch: { name: '돼지고기 짜장밥', ingredients: ['생쌀 50g', '돼지고기 30g', '양파 15g', '애호박 15g', '아기용 짜장가루'], recipe:['1. 돼지고기와 채소를 잘게 다져 볶습니다.','2. 물을 붓고 끓이다가 아기용 짜장 가루를 풀어 농도를 맞춥니다.','3. 따뜻한 밥 위에 올려줍니다.'] }, dinner: { name: '소고기 찹스테이크+밥', ingredients: ['생쌀 35g', '소고기 40g', '파프리카 20g', '버섯 20g', '아기용 굴소스 약간'], recipe:['1. 쌀을 씻어 밥을 짓습니다.','2. 소고기와 채소를 아기 입 크기로 썰어 준비합니다.','3. 팬에 재료를 넣고 볶다가 아기용 굴소스로 살짝 풍미를 더합니다.'] } },
+                    { day: '일', breakfast: { name: '계란 덮밥', ingredients: ['생쌀 50g', '계란 1개', '김가루 약간'], recipe:['1. 따뜻한 밥을 그릇에 담습니다.','2. 스크램블 에그를 부드럽게 만들어 밥 위에 올립니다.','3. 김가루를 살짝 뿌려 마무리합니다.'] }, lunch: { name: '가족 특식 (백숙)', ingredients: ['닭', '찹쌀 등'], recipe:['가족과 함께 먹는 메뉴. 아기는 부드러운 살 위주로 잘게 찢어 주세요.'] }, dinner: { name: '자유식', ingredients: [], recipe:['냉장고에 남은 재료를 활용하거나 아기가 잘 먹는 메뉴를 한 번 더 제공하세요.'] } },
                 ],
                 2: [
-                    { day: '월', breakfast: { name: '소고기 두부 덮밥', ingredients: ['생쌀 50g', '소고기 30g', '두부 30g'] }, lunch: { name: '닭고기 데리야끼구이+밥', ingredients: ['생쌀 35g', '닭다리살 40g', '아기소스'] }, dinner: { name: '돼지고기 완자전+밥', ingredients: ['생쌀 35g', '돼지고기 35g', '두부 20g', '채소 15g'] } },
-                    { day: '화', breakfast: { name: '감자전+밥', ingredients: ['생쌀 35g', '감자 70g'] }, lunch: { name: '대구살 파프리카 리조또', ingredients: ['생쌀 50g', '대구살 35g', '파프리카 25g'] }, dinner: { name: '소고기 시금치 주먹밥', ingredients: ['생쌀 50g', '소고기 30g', '시금치 25g'] } },
-                    { day: '수', breakfast: { name: '돼지고기 청경채 덮밥', ingredients: ['생쌀 50g', '돼지고기 30g', '청경채 30g'] }, lunch: { name: '닭고기 버섯 밥전', ingredients: ['밥 70g', '닭고기 30g', '버섯 20g', '계란물'] }, dinner: { name: '두부 스테이크+밥', ingredients: ['생쌀 35g', '두부 70g', '다진채소 20g'] } },
-                    { day: '목', breakfast: { name: '소고기 뭇국+밥', ingredients: ['생쌀 35g', '소고기 35g', '무 40g'] }, lunch: { name: '닭안심 채소찜+밥', ingredients: ['생쌀 35g', '닭안심 40g', '단호박 20g', '브로콜리 20g'] }, dinner: { name: '계란 야채 볶음밥', ingredients: ['생쌀 50g', '계란 1개', '다진채소 30g'] } },
-                    { day: '금', breakfast: { name: '돼지고기 콩나물 덮밥', ingredients: ['생쌀 50g', '돼지고기 30g', '콩나물 30g'] }, lunch: { name: '참치 채소 주먹밥', ingredients: ['생쌀 50g', '아기참치 1캔', '다진채소 30g'] }, dinner: { name: '닭봉구이+밥', ingredients: ['생쌀 35g', '닭봉 3개'] } },
-                    { day: '토', breakfast: { name: '소고기 애호박 볶음밥', ingredients: ['생쌀 50g', '소고기 30g', '애호박 30g'] }, lunch: { name: '아기 잔치국수', ingredients: ['소면 60g', '계란지단', '애호박/당근'] }, dinner: { name: '돼지고기 감자조림+밥', ingredients: ['생쌀 35g', '돼지고기 35g', '감자 40g'] } },
-                    { day: '일', breakfast: { name: '아기 팬케이크', ingredients: ['핫케이크가루', '우유/계란', '바나나'] }, lunch: { name: '가족 특식', ingredients: [] }, dinner: { name: '소고기 미역국+밥', ingredients: ['생쌀 35g', '소고기 35g', '건미역 5g'] } },
+                    { day: '월', breakfast: { name: '소고기 두부 덮밥', ingredients: ['생쌀 50g', '소고기 30g', '두부 30g', '참기름 약간'], recipe:['1. 소고기는 다져 볶고, 두부는 으깨요.','2. 다시마물 50ml를 넣고 끓이다가 참기름으로 마무리해요.','3. 따뜻한 밥 위에 올려줍니다.'] }, lunch: { name: '닭고기 데리야끼구이+밥', ingredients: ['생쌀 35g', '닭다리살 40g', '아기 간장', '올리고당 약간'], recipe:['1. 밥을 지어요.','2. 닭다리살을 아기 간장과 올리고당으로 만든 소스에 재워 구워요.'] }, dinner: { name: '돼지고기 완자전+밥', ingredients: ['생쌀 35g', '돼지고기 35g', '두부 20g', '다진 채소 15g'], recipe:['1. 밥을 지어요.','2. 모든 재료를 다져 섞어 동그랗게 빚어 부쳐요.'] } },
+                    { day: '화', breakfast: { name: '감자전+밥', ingredients: ['생쌀 35g', '감자 70g'], recipe:['1. 밥을 지어요.','2. 감자를 강판에 갈아 기름 두른 팬에 노릇하게 부쳐요.'] }, lunch: { name: '대구살 파프리카 리조또', ingredients: ['생쌀 50g', '대구살 35g', '파프리카 25g'], recipe:['1. 대구살과 파프리카를 다져 볶아요.','2. 불린 쌀과 물을 넣고 끓여 리조또를 만들어요.'] }, dinner: { name: '소고기 시금치 주먹밥', ingredients: ['생쌀 50g', '소고기 30g', '시금치 25g'], recipe:['1. 소고기와 시금치를 데쳐 다져요.','2. 밥과 모든 재료를 섞어 뭉쳐요.'] } },
+                    { day: '수', breakfast: { name: '돼지고기 청경채 덮밥', ingredients: ['생쌀 50g', '돼지고기 30g', '청경채 30g'], recipe:['1. 돼지고기와 청경채를 다져 볶아요.','2. 물을 살짝 넣고 끓여 덮밥 소스를 만들어 밥 위에 올려요.'] }, lunch: { name: '닭고기 버섯 밥전', ingredients: ['밥 70g', '닭고기 30g', '버섯 20g', '계란 1개'], recipe:['1. 모든 재료를 다져 섞은 후 계란물을 풀어 섞어요.','2. 기름 두른 팬에 동그랗게 부쳐요.'] }, dinner: { name: '두부 스테이크+밥', ingredients: ['생쌀 35g', '두부 70g', '다진채소 20g'], recipe:['1. 밥을 지어요.','2. 으깬 두부와 다진 채소를 섞어 동그랗게 빚어 구워요.'] } },
+                    { day: '목', breakfast: { name: '소고기 뭇국+밥', ingredients: ['생쌀 35g', '소고기 35g', '무 40g'], recipe:['1. 밥을 지어요.','2. 소고기와 무를 넣고 푹 끓여 국을 만들어요.'] }, lunch: { name: '닭안심 채소찜+밥', ingredients: ['생쌀 35g', '닭안심 40g', '단호박 20g', '브로콜리 20g'], recipe:['1. 밥을 지어요.','2. 닭안심과 채소를 찜기에 넣어 부드럽게 쪄요.'] }, dinner: { name: '계란 야채 볶음밥', ingredients: ['생쌀 50g', '계란 1개', '다진채소 30g'], recipe:['1. 채소를 볶다가 밥을 넣고, 마지막에 계란을 풀어 볶아요.'] } },
+                    { day: '금', breakfast: { name: '돼지고기 콩나물 덮밥', ingredients: ['생쌀 50g', '돼지고기 30g', '콩나물 30g'], recipe:['1. 돼지고기와 데친 콩나물을 다져 볶아요.','2. 물을 살짝 넣고 끓여 덮밥 소스를 만들어 밥 위에 올려요.'] }, lunch: { name: '참치 채소 주먹밥', ingredients: ['생쌀 50g', '아기참치 1캔', '다진채소 30g'], recipe:['1. 기름 뺀 참치와 다진 채소를 밥과 섞어 뭉쳐요.'] }, dinner: { name: '닭봉구이+밥', ingredients: ['생쌀 35g', '닭봉 3개'], recipe:['1. 밥을 지어요.','2. 닭봉에 칼집을 내고 에어프라이어나 오븐에 구워요.'] } },
+                    { day: '토', breakfast: { name: '소고기 애호박 볶음밥', ingredients: ['생쌀 50g', '소고기 30g', '애호박 30g'], recipe:['1. 소고기와 애호박을 다져 볶다가 밥을 넣고 함께 볶아요.'] }, lunch: { name: '아기 잔치국수', ingredients: ['소면 60g', '계란지단', '애호박', '당근'], recipe:['1. 채소로 육수를 내고 소면을 삶아요.','2. 고명을 올려 완성해요.'] }, dinner: { name: '돼지고기 감자조림+밥', ingredients: ['생쌀 35g', '돼지고기 35g', '감자 40g'], recipe:['1. 밥을 지어요.','2. 돼지고기와 감자를 아기 간장과 함께 부드럽게 조려요.'] } },
+                    { day: '일', breakfast: { name: '아기 팬케이크', ingredients: ['핫케이크가루', '우유', '계란', '바나나'], recipe:['1. 재료를 섞어 반죽을 만들고 팬에 구워요.','2. 으깬 바나나를 곁들여요.'] }, lunch: { name: '가족 특식', ingredients: [], recipe:['가족과 함께 먹는 메뉴.'] }, dinner: { name: '소고기 미역국+밥', ingredients: ['생쌀 35g', '소고기 35g', '자른미역 5g'], recipe:['1. 밥을 지어요.','2. 소고기와 불린 미역을 참기름에 볶다가 물을 붓고 끓여요.'] } },
                 ],
                 3: [
-                     { day: '월', breakfast: { name: '닭고기 연두부 덮밥', ingredients: ['생쌀 50g', '닭고기 30g', '연두부 40g'] }, lunch: { name: '소고기 파프리카 볶음밥', ingredients: ['생쌀 50g', '소고기 30g', '파프리카 30g'] }, dinner: { name: '돼지고기 배추 된장국+밥', ingredients: ['생쌀 35g', '돼지고기 30g', '알배추 35g', '아기된장'] } },
-                     { day: '화', breakfast: { name: '새우 계란 볶음밥', ingredients: ['생쌀 50g', '새우살 30g', '계란 1개'] }, lunch: { name: '닭안심살구이+주먹밥', ingredients: ['밥 80g', '닭안심 40g', '김가루'] }, dinner: { name: '대구살 채소전+밥', ingredients: ['생쌀 35g', '대구살 35g', '다진채소 35g'] } },
-                     { day: '수', breakfast: { name: '돼지고기 가지 덮밥', ingredients: ['생쌀 50g', '돼지고기 30g', '가지 35g'] }, lunch: { name: '소고기 버섯 리조또', ingredients: ['생쌀 50g', '소고기 30g', '버섯 30g'] }, dinner: { name: '닭곰탕+밥', ingredients: ['생쌀 35g', '닭고기 40g', '대파'] } },
-                     { day: '목', breakfast: { name: '두부 브로콜리 밥볼', ingredients: ['생쌀 50g', '두부 30g', '브로콜리 20g'] }, lunch: { name: '돼지고기 숙주 볶음밥', ingredients: ['생쌀 50g', '돼지고기 30g', '숙주 30g'] }, dinner: { name: '소고기 감자조림+밥', ingredients: ['생쌀 35g', '소고기 35g', '감자 40g'] } },
-                     { day: '금', breakfast: { name: '닭고기 시금치 카레', ingredients: ['생쌀 50g', '닭고기 30g', '시금치 30g', '아기카레'] }, lunch: { name: '돼지고기 김치 주먹밥', ingredients: ['생쌀 50g', '돼지고기 25g', '백김치 20g'] }, dinner: { name: '삼치구이+밥', ingredients: ['생쌀 35g', '순살삼치 1토막 (50g)'] } },
-                     { day: '토', breakfast: { name: '돼지고기 애호박 볶음밥', ingredients: ['생쌀 50g', '돼지고기 30g', '애호박 30g'] }, lunch: { name: '아기 김밥', ingredients: ['김', '밥 80g', '계란', '시금치', '당근'] }, dinner: { name: '소고기 찹스테이크 덮밥', ingredients: ['생쌀 50g', '소고기 40g', '파프리카 15g', '버섯 15g'] } },
-                     { day: '일', breakfast: { name: '아기 유부초밥', ingredients: ['유부', '밥 80g', '참치', '마요네즈'] }, lunch: { name: '가족 특식', ingredients: [] }, dinner: { name: '닭죽', ingredients: ['생쌀 40g', '닭고기', '당근/양파'] } },
+                     { day: '월', breakfast: { name: '닭고기 연두부 덮밥', ingredients: ['생쌀 50g', '닭고기 30g', '연두부 40g'], recipe:['1. 닭고기는 익혀 다지고 연두부와 섞어요.','2. 다시마물과 전분물로 농도를 맞춰 밥 위에 올려요.'] }, lunch: { name: '소고기 파프리카 볶음밥', ingredients: ['생쌀 50g', '소고기 30g', '파프리카 30g'], recipe:['1. 소고기와 파프리카를 다져 볶다가 밥을 넣고 함께 볶아요.'] }, dinner: { name: '돼지고기 배추 된장국+밥', ingredients: ['생쌀 35g', '돼지고기 30g', '알배추 35g', '아기된장'], recipe:['1. 밥을 지어요.','2. 돼지고기와 배추를 넣고 아기 된장을 풀어 끓여요.'] } },
+                     { day: '화', breakfast: { name: '새우 계란 볶음밥', ingredients: ['생쌀 50g', '새우살 30g', '계란 1개'], recipe:['1. 새우는 다지고, 채소와 함께 볶아요.','2. 밥을 넣고 볶다가 계란을 풀어 마무리해요.'] }, lunch: { name: '닭안심살구이+주먹밥', ingredients: ['밥 80g', '닭안심 40g', '김가루'], recipe:['1. 밥은 김가루를 섞어 뭉쳐요.','2. 닭안심은 팬에 노릇하게 구워 곁들여요.'] }, dinner: { name: '대구살 채소전+밥', ingredients: ['생쌀 35g', '대구살 35g', '다진채소 35g'], recipe:['1. 밥을 지어요.','2. 대구살과 채소를 다져 섞어 반죽을 만들어 부쳐요.'] } },
+                     { day: '수', breakfast: { name: '돼지고기 가지 덮밥', ingredients: ['생쌀 50g', '돼지고기 30g', '가지 35g'], recipe:['1. 돼지고기와 가지를 다져 볶아요.','2. 물을 살짝 넣고 끓여 덮밥 소스를 만들어 밥 위에 올려요.'] }, lunch: { name: '소고기 버섯 리조또', ingredients: ['생쌀 50g', '소고기 30g', '버섯 30g'], recipe:['1. 소고기와 버섯을 다져 볶아요.','2. 밥과 물을 넣고 끓여 리조또를 만들어요.'] }, dinner: { name: '닭곰탕+밥', ingredients: ['생쌀 35g', '닭고기 40g', '대파'], recipe:['1. 밥을 지어요.','2. 닭을 푹 삶아 살은 찢고 국물과 함께 내요.'] } },
+                     { day: '목', breakfast: { name: '두부 브로콜리 밥볼', ingredients: ['생쌀 50g', '두부 30g', '브로콜리 20g'], recipe:['1. 두부는 으깨고 브로콜리는 데쳐 다져요.','2. 밥과 모든 재료를 섞어 뭉쳐요.'] }, lunch: { name: '돼지고기 숙주 볶음밥', ingredients: ['생쌀 50g', '돼지고기 30g', '숙주 30g'], recipe:['1. 돼지고기를 볶다가 데친 숙주를 다져 넣고 밥과 함께 볶아요.'] }, dinner: { name: '소고기 감자조림+밥', ingredients: ['생쌀 35g', '소고기 35g', '감자 40g'], recipe:['1. 밥을 지어요.','2. 소고기와 감자를 아기 간장과 함께 부드럽게 조려요.'] } },
+                     { day: '금', breakfast: { name: '닭고기 시금치 카레', ingredients: ['생쌀 50g', '닭고기 30g', '시금치 30g', '아기카레'], recipe:['1. 닭고기와 데친 시금치를 다져 볶아요.','2. 아기 카레가루와 물을 넣고 끓여 밥과 함께 내요.'] }, lunch: { name: '돼지고기 김치 주먹밥', ingredients: ['생쌀 50g', '돼지고기 25g', '백김치 20g'], recipe:['1. 돼지고기는 볶고 백김치는 잘게 다져요.','2. 밥과 모든 재료를 섞어 뭉쳐요.'] }, dinner: { name: '삼치구이+밥', ingredients: ['생쌀 35g', '순살삼치 1토막 (50g)'], recipe:['1. 밥을 지어요.','2. 삼치는 기름을 살짝 두른 팬에 노릇하게 구워요.'] } },
+                     { day: '토', breakfast: { name: '돼지고기 애호박 볶음밥', ingredients: ['생쌀 50g', '돼지고기 30g', '애호박 30g'], recipe:['1. 돼지고기와 애호박을 다져 볶다가 밥을 넣고 함께 볶아요.'] }, lunch: { name: '아기 김밥', ingredients: ['김', '밥 80g', '계란', '시금치', '당근'], recipe:['1. 재료를 준비해 김 위에 밥과 함께 올려 말아줘요.'] }, dinner: { name: '소고기 찹스테이크 덮밥', ingredients: ['생쌀 50g', '소고기 40g', '파프리카 15g', '버섯 15g'], recipe:['1. 소고기와 채소를 작게 썰어 볶아요.','2. 밥 위에 올려 덮밥으로 만들어요.'] } },
+                     { day: '일', breakfast: { name: '아기 유부초밥', ingredients: ['유부', '밥 80g', '참치', '마요네즈'], recipe:['1. 볶은 채소나 참치를 밥과 섞어 유부 안에 채워요.'] }, lunch: { name: '가족 특식', ingredients: [], recipe:['가족과 함께 먹는 메뉴.'] }, dinner: { name: '닭죽', ingredients: ['생쌀 40g', '닭고기', '당근', '양파'], recipe:['1. 닭육수에 불린 쌀과 채소를 넣고 푹 끓여요.'] } },
                 ],
                 4: [
-                    { day: '월', breakfast: { name: '소고기 미역 주먹밥', ingredients: ['생쌀 50g', '소고기 30g', '미역 5g'] }, lunch: { name: '닭고기 채소 덮밥', ingredients: ['생쌀 50g', '닭고기 30g', '모듬채소 30g'] }, dinner: { name: '돼지고기 두부조림+밥', ingredients: ['생쌀 35g', '돼지고기 30g', '두부 40g'] } },
-                    { day: '화', breakfast: { name: '계란찜 밥볼', ingredients: ['밥 70g', '계란 1개'] }, lunch: { name: '대구살 야채스틱+밥', ingredients: ['생쌀 35g', '대구살 40g', '당근 20g', '애호박 20g'] }, dinner: { name: '소고기 버섯 볶음밥', ingredients: ['생쌀 50g', '소고기 30g', '버섯 30g'] } },
-                    { day: '수', breakfast: { name: '닭고기 크림 스파게티', ingredients: ['아기면 60g', '닭고기 30g', '양파 20g', '우유'] }, lunch: { name: '돼지고기 파프리카 주먹밥', ingredients: ['생쌀 50g', '돼지고기 30g', '파프리카 25g'] }, dinner: { name: '소고기 콩나물국+밥', ingredients: ['생쌀 35g', '소고기 35g', '콩나물 30g'] } },
-                    { day: '목', breakfast: { name: '참치마요 덮밥', ingredients: ['생쌀 50g', '아기참치 1캔', '계란', '마요네즈'] }, lunch: { name: '닭안심 텐더구이+밥', ingredients: ['생쌀 35g', '닭안심 40g', '쌀빵가루'] }, dinner: { name: '돼지고기 애호박전+밥', ingredients: ['생쌀 35g', '돼지고기 20g', '애호박 50g'] } },
-                    { day: '금', breakfast: { name: '소고기 카레 리조또', ingredients: ['생쌀 50g', '소고기 30g', '카레채소 30g'] }, lunch: { name: '닭고기 김자반 주먹밥', ingredients: ['생쌀 50g', '닭고기 30g', '김자반'] }, dinner: { name: '생선가스 구이+밥', ingredients: ['생쌀 35g', '흰살생선 50g', '쌀빵가루'] } },
-                    { day: '토', breakfast: { name: '돼지고기 볶음밥', ingredients: ['생쌀 50g', '돼지고기 30g', '모듬채소 30g'] }, lunch: { name: '아기 닭칼국수', ingredients: ['칼국수면', '닭고기', '애호박'] }, dinner: { name: '소고기 갈비탕+밥', ingredients: ['생쌀 35g', '소고기(갈비)', '무'] } },
-                    { day: '일', breakfast: { name: '핫케이크 + 과일', ingredients: ['핫케이크가루', '계란', '제철과일'] }, lunch: { name: '가족 특식', ingredients: [] }, dinner: { name: '자유식 (볶음밥)', ingredients: ['남은 재료 활용'] } },
+                    { day: '월', breakfast: { name: '소고기 미역 주먹밥', ingredients: ['생쌀 50g', '소고기 30g', '자른미역 5g'], recipe:['1. 소고기와 불린 미역을 다져 볶아요.','2. 밥과 섞어 뭉쳐요.'] }, lunch: { name: '닭고기 채소 덮밥', ingredients: ['생쌀 50g', '닭고기 30g', '모듬채소 30g'], recipe:['1. 닭고기와 채소를 다져 볶아요.','2. 물을 넣고 끓여 덮밥 소스를 만들어 밥 위에 올려요.'] }, dinner: { name: '돼지고기 두부조림+밥', ingredients: ['생쌀 35g', '돼지고기 30g', '두부 40g'], recipe:['1. 밥을 지어요.','2. 두부를 부치고, 그 위에 볶은 돼지고기와 양념을 올려 조려요.'] } },
+                    { day: '화', breakfast: { name: '계란찜 밥볼', ingredients: ['밥 70g', '계란 1개'], recipe:['1. 계란찜을 만들어 식힌 후 밥과 섞어 뭉쳐요.'] }, lunch: { name: '대구살 야채스틱+밥', ingredients: ['생쌀 35g', '대구살 40g', '당근 20g', '애호박 20g'], recipe:['1. 밥을 지어요.','2. 대구살과 채소를 다져 섞어 스틱 모양으로 빚어 굽거나 쪄요.'] }, dinner: { name: '소고기 버섯 볶음밥', ingredients: ['생쌀 50g', '소고기 30g', '버섯 30g'], recipe:['1. 소고기와 버섯을 다져 볶다가 밥을 넣고 함께 볶아요.'] } },
+                    { day: '수', breakfast: { name: '닭고기 크림 스파게티', ingredients: ['아기면 60g', '닭고기 30g', '양파 20g', '우유'], recipe:['1. 면을 삶아요.','2. 닭고기와 양파를 볶다가 우유를 넣고 끓여 소스를 만들어요.'] }, lunch: { name: '돼지고기 파프리카 주먹밥', ingredients: ['생쌀 50g', '돼지고기 30g', '파프리카 25g'], recipe:['1. 돼지고기와 파프리카를 다져 볶아요.','2. 밥과 섞어 뭉쳐요.'] }, dinner: { name: '소고기 콩나물국+밥', ingredients: ['생쌀 35g', '소고기 35g', '콩나물 30g'], recipe:['1. 밥을 지어요.','2. 소고기와 콩나물을 넣고 맑게 국을 끓여요.'] } },
+                    { day: '목', breakfast: { name: '참치마요 덮밥', ingredients: ['생쌀 50g', '아기참치 1캔', '계란', '마요네즈'], recipe:['1. 밥 위에 스크램블 에그와 기름 뺀 참치, 마요네즈를 올려요.'] }, lunch: { name: '닭안심 텐더구이+밥', ingredients: ['생쌀 35g', '닭안심 40g', '쌀빵가루'], recipe:['1. 밥을 지어요.','2. 닭안심에 쌀빵가루를 입혀 에어프라이어나 오븐에 구워요.'] }, dinner: { name: '돼지고기 애호박전+밥', ingredients: ['생쌀 35g', '돼지고기 20g', '애호박 50g'], recipe:['1. 밥을 지어요.','2. 돼지고기와 애호박을 다져 섞어 반죽을 만들어 부쳐요.'] } },
+                    { day: '금', breakfast: { name: '소고기 카레 리조또', ingredients: ['생쌀 50g', '소고기 30g', '카레채소 30g'], recipe:['1. 소고기와 채소를 볶아요.','2. 밥과 물, 아기 카레가루를 넣고 끓여요.'] }, lunch: { name: '닭고기 김자반 주먹밥', ingredients: ['생쌀 50g', '닭고기 30g', '김자반'], recipe:['1. 데친 닭고기를 잘게 찢어 밥, 김자반과 섞어 뭉쳐요.'] }, dinner: { name: '생선가스 구이+밥', ingredients: ['생쌀 35g', '흰살생선 50g', '쌀빵가루'], recipe:['1. 밥을 지어요.','2. 생선에 쌀빵가루를 입혀 에어프라이어나 오븐에 구워요.'] } },
+                    { day: '토', breakfast: { name: '돼지고기 볶음밥', ingredients: ['생쌀 50g', '돼지고기 30g', '모듬채소 30g'], recipe:['1. 돼지고기와 채소를 다져 볶다가 밥을 넣고 함께 볶아요.'] }, lunch: { name: '아기 닭칼국수', ingredients: ['칼국수면', '닭고기', '애호박'], recipe:['1. 닭육수에 칼국수면과 채소를 넣고 끓여요.'] }, dinner: { name: '소고기 갈비탕+밥', ingredients: ['생쌀 35g', '소고기(갈비)', '무'], recipe:['1. 밥을 지어요.','2. 소갈비를 푹 삶아 기름을 걷어내고 국물과 함께 내요.'] } },
+                    { day: '일', breakfast: { name: '핫케이크 + 과일', ingredients: ['핫케이크가루', '계란', '제철과일'], recipe:['1. 반죽을 만들어 팬에 굽고 과일을 곁들여요.'] }, lunch: { name: '가족 특식', ingredients: [], recipe:['가족과 함께 먹는 메뉴.'] }, dinner: { name: '자유식 (볶음밥)', ingredients: ['남은 재료 활용'], recipe:['냉장고에 남은 재료를 활용해 볶음밥을 만들어요.'] } },
                 ]
+            };
+
+            const weeklyShoppingListData = {
+                1: {
+                    cost: '약 45,000 ~ 55,000원',
+                    items: [
+                        { category: '곡류/기타', list: ['쌀 (약 750g)'] },
+                        { category: '육류/단백질', list: ['소고기 (170g)', '닭고기 (150g)', '돼지고기 (120g)', '대구살 (80g)', '가자미 (50g)', '계란 (4개)', '두부 (80g)'] },
+                        { category: '채소', list: ['애호박 (100g)', '가지 (30g)', '미역 (5g)', '버섯 (50g)', '시금치 (55g)', '브로콜리 (30g)', '감자 (20g)', '당근 (35g)', '양파 (35g)', '파프리카 (45g)', '무 (40g)'] },
+                        { category: '기타', list: ['아기치즈 (1장)'] }
+                    ]
+                },
+                2: {
+                    cost: '약 40,000 ~ 50,000원',
+                    items: [
+                        { category: '곡류/기타', list: ['쌀 (약 700g)', '소면 (60g)'] },
+                        { category: '육류/단백질', list: ['소고기 (170g)', '닭고기 (180g)', '돼지고기 (130g)', '대구살 (35g)', '계란 (3개)', '두부 (90g)', '아기참치 (1캔)'] },
+                        { category: '채소', list: ['감자 (110g)', '파프리카 (25g)', '시금치 (25g)', '청경채 (30g)', '버섯 (20g)', '무 (40g)', '단호박 (20g)', '브로콜리 (20g)', '콩나물 (30g)', '애호박 (30g)', '당근 (15g)'] },
+                        { category: '기타', list: ['핫케이크가루'] }
+                    ]
+                },
+                3: {
+                    cost: '약 45,000 ~ 55,000원',
+                    items: [
+                        { category: '곡류/기타', list: ['쌀 (약 700g)', '김 (2장)'] },
+                        { category: '육류/단백질', list: ['소고기 (175g)', '닭고기 (140g)', '돼지고기 (140g)', '새우살 (30g)', '대구살 (35g)', '삼치 (50g)', '계란 (1개)', '두부 (30g)', '연두부 (40g)'] },
+                        { category: '채소', list: ['파프리카 (45g)', '알배추 (35g)', '가지 (35g)', '버섯 (45g)', '대파', '브로콜리 (20g)', '숙주 (30g)', '감자 (40g)', '시금치 (45g)', '백김치 (20g)', '애호박 (30g)'] },
+                        { category: '기타', list: ['유부', '아기된장'] }
+                    ]
+                },
+                4: {
+                    cost: '약 40,000 ~ 50,000원',
+                    items: [
+                        { category: '곡류/기타', list: ['쌀 (약 700g)', '아기스파게티면 (60g)', '칼국수면', '쌀빵가루'] },
+                        { category: '육류/단백질', list: ['소고기 (195g)', '닭고기 (150g)', '돼지고기 (115g)', '대구살 (40g)', '흰살생선 (50g)', '계란 (2개)', '두부 (40g)', '아기참치 (1캔)'] },
+                        { category: '채소', list: ['미역 (5g)', '모듬채소 (60g)', '버섯 (30g)', '양파 (35g)', '파프리카 (25g)', '콩나물 (30g)', '애호박 (70g)', '당근 (20g)'] },
+                        { category: '기타', list: ['우유', '김자반', '핫케이크가루'] }
+                    ]
+                }
             };
             
             const mealPlanContainer = document.getElementById('meal-plan-display');
             const weekButtons = document.querySelectorAll('.week-btn');
+            const shoppingButtons = document.querySelectorAll('.shopping-btn');
+            const shoppingListContainer = document.getElementById('shopping-list-display');
+            
+            const recipeModalOverlay = document.getElementById('recipe-modal-overlay');
+            const recipeModal = document.getElementById('recipe-modal');
+            const recipeModalContent = document.getElementById('recipe-modal-content');
+            const recipeTitle = document.getElementById('recipe-title');
+            const recipeIngredients = document.getElementById('recipe-ingredients');
+            const recipeSteps = document.getElementById('recipe-steps');
+            const closeRecipeModal = document.getElementById('close-recipe-modal');
 
-            const tooltip = document.getElementById('meal-tooltip');
+            function openRecipeModal(meal) {
+                recipeTitle.textContent = meal.name;
+                recipeIngredients.innerHTML = meal.ingredients.map(ing => `<li>${ing}</li>`).join('');
+                recipeSteps.innerHTML = meal.recipe.map(step => `<li>${step}</li>`).join('');
+                
+                recipeModalOverlay.classList.remove('hidden');
+                recipeModal.classList.remove('hidden');
+                setTimeout(() => {
+                    recipeModalOverlay.classList.remove('opacity-0');
+                    recipeModalContent.classList.remove('scale-95');
+                }, 10);
+            }
 
-            mealPlanContainer.addEventListener('mouseover', (e) => {
+            function hideRecipeModal() {
+                recipeModalOverlay.classList.add('opacity-0');
+                recipeModalContent.classList.add('scale-95');
+                setTimeout(() => {
+                    recipeModalOverlay.classList.add('hidden');
+                    recipeModal.classList.add('hidden');
+                }, 300);
+            }
+
+            closeRecipeModal.addEventListener('click', hideRecipeModal);
+            recipeModalOverlay.addEventListener('click', hideRecipeModal);
+
+            mealPlanContainer.addEventListener('click', (e) => {
                 const targetCell = e.target.closest('.meal-cell');
                 if (!targetCell) return;
 
-                const ingredients = targetCell.dataset.ingredients.split(',');
-                if (ingredients.length === 0 || ingredients[0] === '') return;
-
-                tooltip.innerHTML = `<ul>${ingredients.map(ing => `<li>${ing.trim()}</li>`).join('')}</ul>`;
+                const week = document.querySelector('.week-btn.active').dataset.week;
+                const day = targetCell.parentElement.querySelector('div:first-child').textContent;
+                const mealTypeIndex = Array.from(targetCell.parentElement.children).indexOf(targetCell) - 1;
+                const mealTypes = ['breakfast', 'lunch', 'dinner'];
+                const mealType = mealTypes[mealTypeIndex];
                 
-                const rect = targetCell.getBoundingClientRect();
-                tooltip.style.display = 'block';
-                
-                const tooltipRect = tooltip.getBoundingClientRect();
-                
-                let top = rect.bottom + window.scrollY + 5;
-                let left = rect.left + window.scrollX;
-
-                if (left + tooltipRect.width > window.innerWidth) {
-                    left = window.innerWidth - tooltipRect.width - 10;
-                }
-                
-                if (top + tooltipRect.height > window.innerHeight + window.scrollY) {
-                    top = rect.top + window.scrollY - tooltipRect.height - 5;
-                }
-
-                tooltip.style.left = `${left}px`;
-                tooltip.style.top = `${top}px`;
-            });
-
-            mealPlanContainer.addEventListener('mouseout', (e) => {
-                const targetCell = e.target.closest('.meal-cell');
-                if (targetCell) {
-                    tooltip.style.display = 'none';
+                const mealData = mealPlanData[week].find(d => d.day === day)[mealType];
+                if(mealData && mealData.recipe && mealData.recipe.length > 0) {
+                    openRecipeModal(mealData);
                 }
             });
-
 
             function renderMealPlan(week) {
                 mealPlanContainer.innerHTML = '';
@@ -459,29 +484,70 @@
                     row.className = 'grid grid-cols-1 md:grid-cols-4 gap-4 py-3 border-b last:border-b-0';
                     row.innerHTML = `
                         <div class="font-bold text-lg md:text-base text-[#073B4C]">${meal.day}</div>
-                        <div class="meal-cell" data-ingredients="${meal.breakfast.ingredients.join(', ')}"><span class="font-semibold md:hidden">아침: </span>${meal.breakfast.name}</div>
-                        <div class="meal-cell" data-ingredients="${meal.lunch.ingredients.join(', ')}"><span class="font-semibold md:hidden">점심: </span>${meal.lunch.name}</div>
-                        <div class="meal-cell" data-ingredients="${meal.dinner.ingredients.join(', ')}"><span class="font-semibold md:hidden">저녁: </span>${meal.dinner.name}</div>
+                        <div class="meal-cell p-2 rounded-md"><span class="font-semibold md:hidden">아침: </span>${meal.breakfast.name}</div>
+                        <div class="meal-cell p-2 rounded-md"><span class="font-semibold md:hidden">점심: </span>${meal.lunch.name}</div>
+                        <div class="meal-cell p-2 rounded-md"><span class="font-semibold md:hidden">저녁: </span>${meal.dinner.name}</div>
                     `;
                     mealPlanContainer.appendChild(row);
                 });
             }
 
-            weekButtons.forEach(button => {
+            function renderShoppingList(week) {
+                shoppingListContainer.innerHTML = '';
+                const data = weeklyShoppingListData[week];
+                
+                const costEl = document.createElement('div');
+                costEl.className = 'text-right mb-6';
+                costEl.innerHTML = `<span class="text-gray-600">예상 비용: </span><span class="font-bold text-xl text-[#073B4C]">${data.cost}</span>`;
+                shoppingListContainer.appendChild(costEl);
+
+                const container = document.createElement('div');
+                container.className = 'space-y-6';
+                
+                data.items.forEach(category => {
+                    const categoryDiv = document.createElement('div');
+                    categoryDiv.innerHTML = `<h3 class="text-xl font-bold text-[#073B4C] mb-3 border-b pb-2">${category.category}</h3>`;
+                    
+                    const listGrid = document.createElement('div');
+                    listGrid.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-2 text-gray-700';
+                    listGrid.innerHTML = category.list.map(item => `<span>- ${item}</span>`).join('');
+                    
+                    categoryDiv.appendChild(listGrid);
+                    container.appendChild(categoryDiv);
+                });
+                
+                shoppingListContainer.appendChild(container);
+            }
+            
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            tabButtons.forEach(button => {
                 button.addEventListener('click', (e) => {
-                    weekButtons.forEach(btn => btn.classList.remove('active'));
+                    const week = e.target.dataset.week;
+                    const isShoppingBtn = e.target.classList.contains('shopping-btn');
+                    
+                    const btns = isShoppingBtn ? document.querySelectorAll('.shopping-btn') : document.querySelectorAll('.week-btn');
+                    const otherBtns = isShoppingBtn ? document.querySelectorAll('.week-btn') : document.querySelectorAll('.shopping-btn');
+
+                    btns.forEach(btn => btn.classList.remove('active'));
+                    otherBtns.forEach(btn => {
+                        if (btn.dataset.week === week) btn.classList.add('active');
+                        else btn.classList.remove('active');
+                    });
                     e.target.classList.add('active');
-                    const week = e.target.id.split('-')[2];
+                    
                     renderMealPlan(week);
+                    renderShoppingList(week);
                 });
             });
 
             renderMealPlan(1);
+            renderShoppingList(1);
         });
     </script>
 
 </body>
 </html>
+
 
 
 
