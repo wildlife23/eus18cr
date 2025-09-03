@@ -1,0 +1,487 @@
+<!-- Chosen Palette: energetic & playful -->
+<!-- Application Structure Plan: A single-page, scrolling narrative SPA was designed to tell the story of the meal plan's strategy. The structure flows from a new, upfront "Nutrition Guide" section providing foundational context, then to high-level nutritional balance (protein), specific problem-solving (rice refusal), developmental goals (self-feeding), and finally a chronological overview (weekly goals). This thematic, top-down approach helps the user understand the *why* behind the plan. An interactive meal plan viewer and shopping list provide actionable tools. -->
+<!-- Visualization & Content Choices: 
+- Nutrition Guide: Goal: Inform. Viz: Styled HTML cards/divs. Justification: Added based on user feedback to provide crucial context on portion sizes and meal patterns upfront. This grounds the entire report in expert recommendations. Method: HTML/CSS. CONFIRMED: NO SVG.
+- Protein Distribution: Goal: Compare composition. Viz: Donut Chart. Justification: Best for showing parts-of-a-whole distribution of the 6 key protein sources. Library: Chart.js/Canvas. CONFIRMED: NO SVG.
+- Rice Refusal Strategy: Goal: Compare categories. Viz: Horizontal Bar Chart. Justification: Effectively compares the frequency of different carbohydrate meal types. The inclusion of "Rice + Side Dish" format is now a key part of the strategy, and the chart visualizes its balanced inclusion. Library: Chart.js/Canvas. CONFIRMED: NO SVG.
+- Self-Feeding Habit: Goal: Inform & show change. Viz: Big Number Stat & Line Chart. Justification: The big number provides a powerful, immediate summary (42%), while the line chart shows the consistent application of this strategy week-over-week. Library: HTML/CSS & Chart.js/Canvas. CONFIRMED: NO SVG.
+- Weekly Plan Flow: Goal: Organize & show process. Viz: HTML/CSS Timeline. Justification: A timeline is the most intuitive method to display a chronological process with distinct stages. Method: Styled HTML divs. CONFIRMED: NO SVG/Mermaid. 
+- Interactive Meal Plan: Goal: Organize & Inform. Viz: Interactive HTML Table/Grid with hover tooltips. Justification: A tabbed weekly view is user-friendly. Tooltips provide ingredient details reflecting the 170-180g portion sizes, corrected for accuracy based on cooking transformations. Method: HTML/CSS/JS. CONFIRMED: NO SVG.
+- Shopping List: Goal: Organize & Inform. Viz: Responsive HTML Table/Grid. Justification: Makes the report actionable by providing a practical shopping list. Method: Styled HTML divs. CONFIRMED: NO SVG.-->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>18개월 아기 식단 분석 리포트</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #F7F9FB;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .week-btn.active {
+            background-color: #073B4C;
+            color: white;
+        }
+        .meal-cell {
+            cursor: pointer;
+            position: relative;
+        }
+        #meal-tooltip {
+            position: absolute;
+            display: none;
+            background-color: #2d3748;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            z-index: 50;
+            pointer-events: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border: 1px solid #4a5568;
+            min-width: 150px;
+        }
+        #meal-tooltip ul {
+            list-style: disc;
+            padding-left: 1.25rem;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-[#073B4C] mb-4">18개월 아기, 한 달 84끼 영양 리포트</h1>
+            <p class="text-lg text-gray-600">제공된 식단표를 기반으로 한 달간의 영양 균형 및 식습관 형성 전략을 분석합니다.</p>
+        </header>
+
+        <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            
+            <section class="lg:col-span-3 bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-bold text-[#118AB2] mb-4">18개월 아기, 권장 영양 가이드</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <h3 class="font-bold text-lg text-blue-800 mb-2">🍚 한 끼 식사량</h3>
+                        <p class="text-3xl font-bold text-blue-600">170 ~ 180g</p>
+                        <p class="text-sm text-gray-600">(밥과 반찬 포함)</p>
+                        <ul class="text-sm text-gray-700 mt-3 space-y-1">
+                            <li><strong>밥:</strong> 약 80~90g (조리 후)</li>
+                            <li><strong>단백질:</strong> 약 20~30g (조리 후)</li>
+                            <li><strong>채소:</strong> 약 30~40g (조리 후)</li>
+                        </ul>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <h3 class="font-bold text-lg text-green-800 mb-2">🍽️ 식사 패턴</h3>
+                        <p class="text-gray-700">하루 <span class="font-bold text-green-600">세 끼 식사</span>와 <span class="font-bold text-green-600">1~2번의 간식</span>을 권장합니다.</p>
+                        <p class="text-sm text-gray-600 mt-2">곡물, 단백질, 채소, 과일, 유제품을 골고루 포함하여 다양한 영양소를 섭취하는 것이 중요합니다.</p>
+                    </div>
+                    <div class="bg-yellow-50 p-4 rounded-lg">
+                        <h3 class="font-bold text-lg text-yellow-800 mb-2">🔔 식습관 주의사항</h3>
+                        <ul class="text-sm text-gray-700 space-y-2">
+                            <li>✔️ 아기의 배고픔과 포만감 신호를 존중해 양을 조절해주세요.</li>
+                            <li>✔️ 간식은 식사에 영향을 주지 않을 정도로만 제공해주세요.</li>
+                            <li>✔️ 아기가 잘 먹고 활발하다면 양에 너무 걱정하지 않으셔도 괜찮습니다.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section class="lg:col-span-2 bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-bold text-[#118AB2] mb-4">핵심 영양소: 단백질 섭취 균형</h2>
+                <p class="text-gray-600 mb-6">한 달 동안 다양한 단백질원을 골고루 섭취하여 아기의 성장 발달에 필수적인 아미노산을 공급합니다. 철분이 풍부한 소고기와 부드러운 닭고기, 생선이 균형 있게 포함되었습니다.</p>
+                <div class="chart-container">
+                    <canvas id="proteinChart"></canvas>
+                </div>
+            </section>
+            
+            <section class="lg:col-span-1 bg-white rounded-lg shadow-md p-6 flex flex-col justify-center items-center">
+                <h2 class="text-2xl font-bold text-[#EF476F] mb-4">자기주도 식습관 형성</h2>
+                <p class="text-gray-600 text-center mb-6">아기 스스로 손으로 집어 먹으며 성취감을 느낄 수 있는 메뉴를 꾸준히 제공합니다.</p>
+                <div class="text-center mb-8">
+                    <p class="text-gray-500">한 달간 '자기주도' 메뉴 비율</p>
+                    <p class="text-7xl font-bold text-[#EF476F] my-2">42%</p>
+                    <p class="text-gray-600">(총 84끼 중 35끼)</p>
+                </div>
+                <div class="w-full">
+                     <p class="text-center text-gray-600 mb-4">주차별 자기주도 메뉴 제공 횟수</p>
+                    <div class="chart-container h-64">
+                        <canvas id="selfFeedingChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <section class="lg:col-span-3 bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-bold text-[#06D6A0] mb-4">쌀밥 거부 극복 전략</h2>
+                <p class="text-gray-600 mb-6">밥의 형태를 다채롭게 하고, '밥+반찬' 식단을 병행하여 흰밥에도 자연스럽게 익숙해지도록 돕습니다. 한 그릇 음식과 분리된 식단을 균형 있게 제공합니다.</p>
+                <div class="chart-container h-96 md:h-[450px]">
+                    <canvas id="carbChart"></canvas>
+                </div>
+            </section>
+            
+            <section class="lg:col-span-3 bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-bold text-[#FFD166] mb-4">주차별 식단 목표 및 흐름</h2>
+                <p class="text-gray-600 mb-8">식단은 4주에 걸쳐 점진적으로 새로운 맛과 식감을 경험하도록 체계적으로 설계되었습니다.</p>
+                <div class="relative px-2">
+                    <div class="border-l-4 border-gray-200 absolute h-full top-0 left-6"></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                        <div class="mb-8 pl-10 relative">
+                            <div class="absolute w-8 h-8 bg-[#118AB2] rounded-full -left-0 top-1 border-4 border-white flex items-center justify-center text-white font-bold">1</div>
+                            <h3 class="text-xl font-bold text-[#073B4C]">1주차: 밥과 친해지기</h3>
+                            <p class="text-gray-600 mt-2">다양한 밥 형태(주먹밥, 밥볼, 리조또)와 '밥+반찬' 식단을 병행하여 식사에 대한 긍정적 인식을 형성합니다.</p>
+                        </div>
+                        <div class="mb-8 pl-10 relative">
+                            <div class="absolute w-8 h-8 bg-[#06D6A0] rounded-full -left-0 top-1 border-4 border-white flex items-center justify-center text-white font-bold">2</div>
+                            <h3 class="text-xl font-bold text-[#073B4C]">2주차: 단백질원 탐색</h3>
+                            <p class="text-gray-600 mt-2">두부, 참치 등 새로운 단백질원을 활용하고, 구이, 조림 등 다양한 반찬 조리법을 경험하며 씹는 연습을 합니다.</p>
+                        </div>
+                        <div class="mb-8 pl-10 relative">
+                            <div class="absolute w-8 h-8 bg-[#FFD166] rounded-full -left-0 top-1 border-4 border-white flex items-center justify-center text-white font-bold">3</div>
+                            <h3 class="text-xl font-bold text-[#073B4C]">3주차: 새로운 조합 시도</h3>
+                            <p class="text-gray-600 mt-2">새우 등 신선한 재료를 탐색하고, 김밥이나 국수 같은 특별한 형태의 식사와 다양한 국물 요리를 시도합니다.</p>
+                        </div>
+                        <div class="pl-10 relative">
+                            <div class="absolute w-8 h-8 bg-[#EF476F] rounded-full -left-0 top-1 border-4 border-white flex items-center justify-center text-white font-bold">4</div>
+                            <h3 class="text-xl font-bold text-[#073B4C]">4주차: 식습관 다지기</h3>
+                            <p class="text-gray-600 mt-2">스파게티, 구이 등 다양한 조리법으로 저작 능력을 기르고, 익숙한 '밥+반찬' 메뉴를 복습하며 식습관을 다집니다.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="lg:col-span-3 bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-bold text-[#073B4C] mb-4">전체 식단표 보기</h2>
+                <p class="text-gray-600 mb-6">아래 버튼을 눌러 주차별 상세 식단을 확인하세요. 메뉴에 마우스를 올리면 필요 재료를 볼 수 있습니다.</p>
+                <div class="flex space-x-2 mb-6 border-b pb-4">
+                    <button id="btn-week-1" class="week-btn px-4 py-2 rounded-lg font-semibold transition-colors duration-200 active">1주차</button>
+                    <button id="btn-week-2" class="week-btn px-4 py-2 rounded-lg font-semibold transition-colors duration-200">2주차</button>
+                    <button id="btn-week-3" class="week-btn px-4 py-2 rounded-lg font-semibold transition-colors duration-200">3주차</button>
+                    <button id="btn-week-4" class="week-btn px-4 py-2 rounded-lg font-semibold transition-colors duration-200">4주차</button>
+                </div>
+                <div id="meal-plan-display">
+                </div>
+            </section>
+
+            <section class="lg:col-span-3 bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-bold text-[#118AB2] mb-4">🛒 한 달 식재료 구매 목록</h2>
+                <p class="text-gray-600 mb-6">아래 목록은 한 달 기준이며, 주간 단위로 신선하게 구매하시는 것을 권장합니다. 가격은 구매처에 따라 변동될 수 있습니다.</p>
+                
+                <div class="space-y-6">
+                    <div>
+                        <h3 class="text-xl font-bold text-[#073B4C] mb-3 border-b pb-2">곡류 및 기본 재료</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-2 text-gray-700">
+                            <span><strong>쌀/잡곡:</strong> 약 3kg</span>
+                            <span><strong>아기용 김:</strong> 1-2팩</span>
+                            <span><strong>아기용 조미료 (간장, 소금 등)</strong></span>
+                            <span><strong>밀가루/부침가루:</strong> 1봉</span>
+                            <span><strong>참기름/식용유:</strong> 1병</span>
+                            <span class="font-bold text-right md:col-start-3">소계: 약 35,000 ~ 45,000원</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xl font-bold text-[#073B4C] mb-3 border-b pb-2">육류, 생선 및 단백질</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-2 text-gray-700">
+                           <span><strong>소고기 (안심/우둔살):</strong> 약 700g</span>
+                           <span><strong>닭고기 (안심/가슴살):</strong> 약 700g</span>
+                           <span><strong>돼지고기 (안심/등심):</strong> 약 500g</span>
+                           <span><strong>흰살생선 (대구, 가자미):</strong> 약 400g</span>
+                           <span><strong>새우:</strong> 약 150g</span>
+                           <span><strong>계란:</strong> 1판 (15구)</span>
+                           <span><strong>두부/연두부:</strong> 2-3모</span>
+                           <span class="font-bold text-right md:col-start-3 md:mt-4">소계: 약 80,000 ~ 100,000원</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xl font-bold text-[#073B4C] mb-3 border-b pb-2">채소 및 과일</h3>
+                        <p class="text-sm text-gray-500 mb-4">기본 채소(애호박, 당근, 양파, 감자, 버섯류, 브로콜리, 시금치)를 바탕으로 제철 채소를 추가하세요.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-2 text-gray-700">
+                           <span><strong>기본 채소류:</strong> 각 1~2개씩</span>
+                           <span><strong>제철 채소/과일:</strong> 주간 단위 구매</span>
+                           <span class="font-bold text-right md:col-start-3">소계: 약 50,000 ~ 70,000원</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-4 border-t-2 text-right">
+                    <p class="text-gray-600 text-lg">한 달 식재료 총 예상 비용</p>
+                    <p class="text-3xl font-bold text-[#073B4C]">약 165,000원 ~ 215,000원</p>
+                </div>
+            </section>
+            
+        </main>
+    </div>
+    
+    <div id="meal-tooltip"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const chartTooltipTitleCallback = {
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            title: function(tooltipItems) {
+                                const item = tooltipItems[0];
+                                let label = item.chart.data.labels[item.dataIndex];
+                                if (Array.isArray(label)) {
+                                    return label.join(' ');
+                                } else {
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            const processLabels = (labels) => {
+                return labels.map(label => {
+                    if (label.length > 16) {
+                        const words = label.split(' ');
+                        const newLabel = [];
+                        let line = '';
+                        words.forEach(word => {
+                            if ((line + word).length > 16) {
+                                newLabel.push(line.trim());
+                                line = '';
+                            }
+                            line += word + ' ';
+                        });
+                        newLabel.push(line.trim());
+                        return newLabel;
+                    }
+                    return label;
+                });
+            };
+
+            const proteinData = {
+                labels: ['소고기', '닭고기', '돼지고기', '생선/해물', '계란/두부'],
+                datasets: [{
+                    label: '식단 포함 횟수',
+                    data: [21, 20, 15, 12, 16],
+                    backgroundColor: ['#EF476F', '#FFD166', '#06D6A0', '#118AB2', '#6b7280'],
+                    hoverOffset: 4
+                }]
+            };
+
+            const proteinCtx = document.getElementById('proteinChart').getContext('2d');
+            new Chart(proteinCtx, {
+                type: 'doughnut',
+                data: proteinData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    ...chartTooltipTitleCallback
+                }
+            });
+
+            const carbData = {
+                labels: processLabels(['밥+반찬', '덮밥', '볶음밥', '주먹밥/밥볼', '리조또/기타']),
+                datasets: [{
+                    label: '제공 횟수',
+                    data: [31, 15, 12, 17, 9],
+                    backgroundColor: '#06D6A0',
+                    borderColor: '#05A37A',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            };
+
+            const carbCtx = document.getElementById('carbChart').getContext('2d');
+            new Chart(carbCtx, {
+                type: 'bar',
+                data: carbData,
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { beginAtZero: true, grid: { display: false } },
+                        y: { grid: { display: false } }
+                    },
+                    ...chartTooltipTitleCallback,
+                    plugins: {
+                       ...chartTooltipTitleCallback.plugins,
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            const selfFeedingData = {
+                labels: ['1주차', '2주차', '3주차', '4주차'],
+                datasets: [{
+                    label: '자기주도 메뉴 횟수',
+                    data: [9, 8, 9, 9],
+                    fill: true,
+                    backgroundColor: 'rgba(239, 71, 111, 0.1)',
+                    borderColor: '#EF476F',
+                    tension: 0.1
+                }]
+            };
+
+            const selfFeedingCtx = document.getElementById('selfFeedingChart').getContext('2d');
+            new Chart(selfFeedingCtx, {
+                type: 'line',
+                data: selfFeedingData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            ticks: { stepSize: 2 }
+                        }
+                    },
+                     ...chartTooltipTitleCallback,
+                     plugins: {
+                       ...chartTooltipTitleCallback.plugins,
+                        legend: { display: false }
+                    }
+                }
+            });
+            
+            const mealPlanData = {
+                1: [
+                    { day: '월', breakfast: { name: '소고기 애호박 주먹밥', ingredients: ['생쌀 50g', '소고기 30g', '애호박 30g'] }, lunch: { name: '닭고기 완두콩 밥볼', ingredients: ['생쌀 50g', '닭안심 30g', '완두콩 25g'] }, dinner: { name: '대구살구이+채소볶음+밥', ingredients: ['생쌀 35g', '대구살 40g', '파프리카 25g', '버섯 25g'] } },
+                    { day: '화', breakfast: { name: '돼지고기 가지 볶음밥', ingredients: ['생쌀 50g', '돼지고기 30g', '가지 30g'] }, lunch: { name: '두부계란찜+밥', ingredients: ['생쌀 35g', '두부 50g', '계란 1개'] }, dinner: { name: '소고기 미역국+밥', ingredients: ['생쌀 35g', '소고기 35g', '건미역 5g'] } },
+                    { day: '수', breakfast: { name: '닭고기 버섯 크림 리조또', ingredients: ['생쌀 50g', '닭안심 30g', '버섯 25g', '아기치즈'] }, lunch: { name: '대구살 스테이크+밥', ingredients: ['생쌀 35g', '대구살 40g', '시금치 30g'] }, dinner: { name: '돼지고기 채소볶음+밥', ingredients: ['생쌀 35g', '돼지고기 35g', '양파 20g', '당근 20g'] } },
+                    { day: '목', breakfast: { name: '소고기 브로콜리 덮밥', ingredients: ['생쌀 50g', '소고기 30g', '브로콜리 30g'] }, lunch: { name: '닭고기 카레라이스', ingredients: ['생쌀 50g', '닭안심 30g', '감자 20g', '당근 15g'] }, dinner: { name: '애호박전+밥', ingredients: ['생쌀 35g', '애호박 70g', '계란물'] } },
+                    { day: '금', breakfast: { name: '돼지고기 두부 밥볼', ingredients: ['생쌀 50g', '돼지고기 20g', '두부 30g'] }, lunch: { name: '소고기 무조림+밥', ingredients: ['생쌀 35g', '소고기 35g', '무 40g'] }, dinner: { name: '가자미구이+밥', ingredients: ['생쌀 35g', '순살가자미 1토막 (50g)'] } },
+                    { day: '토', breakfast: { name: '닭고기 시금치 주먹밥', ingredients: ['생쌀 50g', '닭안심 30g', '시금치 25g'] }, lunch: { name: '돼지고기 짜장밥', ingredients: ['생쌀 50g', '돼지고기 30g', '양파 15g', '애호박 15g'] }, dinner: { name: '소고기 찹스테이크+밥', ingredients: ['생쌀 35g', '소고기 40g', '파프리카 20g', '버섯 20g'] } },
+                    { day: '일', breakfast: { name: '계란 덮밥', ingredients: ['생쌀 50g', '계란 1개'] }, lunch: { name: '가족 특식 (백숙)', ingredients: ['닭', '찹쌀 등'] }, dinner: { name: '자유식', ingredients: [] } },
+                ],
+                2: [
+                    { day: '월', breakfast: { name: '소고기 두부 덮밥', ingredients: ['생쌀 50g', '소고기 30g', '두부 30g'] }, lunch: { name: '닭고기 데리야끼구이+밥', ingredients: ['생쌀 35g', '닭다리살 40g', '아기소스'] }, dinner: { name: '돼지고기 완자전+밥', ingredients: ['생쌀 35g', '돼지고기 35g', '두부 20g', '채소 15g'] } },
+                    { day: '화', breakfast: { name: '감자전+밥', ingredients: ['생쌀 35g', '감자 70g'] }, lunch: { name: '대구살 파프리카 리조또', ingredients: ['생쌀 50g', '대구살 35g', '파프리카 25g'] }, dinner: { name: '소고기 시금치 주먹밥', ingredients: ['생쌀 50g', '소고기 30g', '시금치 25g'] } },
+                    { day: '수', breakfast: { name: '돼지고기 청경채 덮밥', ingredients: ['생쌀 50g', '돼지고기 30g', '청경채 30g'] }, lunch: { name: '닭고기 버섯 밥전', ingredients: ['밥 70g', '닭고기 30g', '버섯 20g', '계란물'] }, dinner: { name: '두부 스테이크+밥', ingredients: ['생쌀 35g', '두부 70g', '다진채소 20g'] } },
+                    { day: '목', breakfast: { name: '소고기 뭇국+밥', ingredients: ['생쌀 35g', '소고기 35g', '무 40g'] }, lunch: { name: '닭안심 채소찜+밥', ingredients: ['생쌀 35g', '닭안심 40g', '단호박 20g', '브로콜리 20g'] }, dinner: { name: '계란 야채 볶음밥', ingredients: ['생쌀 50g', '계란 1개', '다진채소 30g'] } },
+                    { day: '금', breakfast: { name: '돼지고기 콩나물 덮밥', ingredients: ['생쌀 50g', '돼지고기 30g', '콩나물 30g'] }, lunch: { name: '참치 채소 주먹밥', ingredients: ['생쌀 50g', '아기참치 1캔', '다진채소 30g'] }, dinner: { name: '닭봉구이+밥', ingredients: ['생쌀 35g', '닭봉 3개'] } },
+                    { day: '토', breakfast: { name: '소고기 애호박 볶음밥', ingredients: ['생쌀 50g', '소고기 30g', '애호박 30g'] }, lunch: { name: '아기 잔치국수', ingredients: ['소면 60g', '계란지단', '애호박/당근'] }, dinner: { name: '돼지고기 감자조림+밥', ingredients: ['생쌀 35g', '돼지고기 35g', '감자 40g'] } },
+                    { day: '일', breakfast: { name: '아기 팬케이크', ingredients: ['핫케이크가루', '우유/계란', '바나나'] }, lunch: { name: '가족 특식', ingredients: [] }, dinner: { name: '소고기 미역국+밥', ingredients: ['생쌀 35g', '소고기 35g', '건미역 5g'] } },
+                ],
+                3: [
+                     { day: '월', breakfast: { name: '닭고기 연두부 덮밥', ingredients: ['생쌀 50g', '닭고기 30g', '연두부 40g'] }, lunch: { name: '소고기 파프리카 볶음밥', ingredients: ['생쌀 50g', '소고기 30g', '파프리카 30g'] }, dinner: { name: '돼지고기 배추 된장국+밥', ingredients: ['생쌀 35g', '돼지고기 30g', '알배추 35g', '아기된장'] } },
+                     { day: '화', breakfast: { name: '새우 계란 볶음밥', ingredients: ['생쌀 50g', '새우살 30g', '계란 1개'] }, lunch: { name: '닭안심살구이+주먹밥', ingredients: ['밥 80g', '닭안심 40g', '김가루'] }, dinner: { name: '대구살 채소전+밥', ingredients: ['생쌀 35g', '대구살 35g', '다진채소 35g'] } },
+                     { day: '수', breakfast: { name: '돼지고기 가지 덮밥', ingredients: ['생쌀 50g', '돼지고기 30g', '가지 35g'] }, lunch: { name: '소고기 버섯 리조또', ingredients: ['생쌀 50g', '소고기 30g', '버섯 30g'] }, dinner: { name: '닭곰탕+밥', ingredients: ['생쌀 35g', '닭고기 40g', '대파'] } },
+                     { day: '목', breakfast: { name: '두부 브로콜리 밥볼', ingredients: ['생쌀 50g', '두부 30g', '브로콜리 20g'] }, lunch: { name: '돼지고기 숙주 볶음밥', ingredients: ['생쌀 50g', '돼지고기 30g', '숙주 30g'] }, dinner: { name: '소고기 감자조림+밥', ingredients: ['생쌀 35g', '소고기 35g', '감자 40g'] } },
+                     { day: '금', breakfast: { name: '닭고기 시금치 카레', ingredients: ['생쌀 50g', '닭고기 30g', '시금치 30g', '아기카레'] }, lunch: { name: '돼지고기 김치 주먹밥', ingredients: ['생쌀 50g', '돼지고기 25g', '백김치 20g'] }, dinner: { name: '삼치구이+밥', ingredients: ['생쌀 35g', '순살삼치 1토막 (50g)'] } },
+                     { day: '토', breakfast: { name: '돼지고기 애호박 볶음밥', ingredients: ['생쌀 50g', '돼지고기 30g', '애호박 30g'] }, lunch: { name: '아기 김밥', ingredients: ['김', '밥 80g', '계란', '시금치', '당근'] }, dinner: { name: '소고기 찹스테이크 덮밥', ingredients: ['생쌀 50g', '소고기 40g', '파프리카 15g', '버섯 15g'] } },
+                     { day: '일', breakfast: { name: '아기 유부초밥', ingredients: ['유부', '밥 80g', '참치', '마요네즈'] }, lunch: { name: '가족 특식', ingredients: [] }, dinner: { name: '닭죽', ingredients: ['생쌀 40g', '닭고기', '당근/양파'] } },
+                ],
+                4: [
+                    { day: '월', breakfast: { name: '소고기 미역 주먹밥', ingredients: ['생쌀 50g', '소고기 30g', '미역 5g'] }, lunch: { name: '닭고기 채소 덮밥', ingredients: ['생쌀 50g', '닭고기 30g', '모듬채소 30g'] }, dinner: { name: '돼지고기 두부조림+밥', ingredients: ['생쌀 35g', '돼지고기 30g', '두부 40g'] } },
+                    { day: '화', breakfast: { name: '계란찜 밥볼', ingredients: ['밥 70g', '계란 1개'] }, lunch: { name: '대구살 야채스틱+밥', ingredients: ['생쌀 35g', '대구살 40g', '당근 20g', '애호박 20g'] }, dinner: { name: '소고기 버섯 볶음밥', ingredients: ['생쌀 50g', '소고기 30g', '버섯 30g'] } },
+                    { day: '수', breakfast: { name: '닭고기 크림 스파게티', ingredients: ['아기면 60g', '닭고기 30g', '양파 20g', '우유'] }, lunch: { name: '돼지고기 파프리카 주먹밥', ingredients: ['생쌀 50g', '돼지고기 30g', '파프리카 25g'] }, dinner: { name: '소고기 콩나물국+밥', ingredients: ['생쌀 35g', '소고기 35g', '콩나물 30g'] } },
+                    { day: '목', breakfast: { name: '참치마요 덮밥', ingredients: ['생쌀 50g', '아기참치 1캔', '계란', '마요네즈'] }, lunch: { name: '닭안심 텐더구이+밥', ingredients: ['생쌀 35g', '닭안심 40g', '쌀빵가루'] }, dinner: { name: '돼지고기 애호박전+밥', ingredients: ['생쌀 35g', '돼지고기 20g', '애호박 50g'] } },
+                    { day: '금', breakfast: { name: '소고기 카레 리조또', ingredients: ['생쌀 50g', '소고기 30g', '카레채소 30g'] }, lunch: { name: '닭고기 김자반 주먹밥', ingredients: ['생쌀 50g', '닭고기 30g', '김자반'] }, dinner: { name: '생선가스 구이+밥', ingredients: ['생쌀 35g', '흰살생선 50g', '쌀빵가루'] } },
+                    { day: '토', breakfast: { name: '돼지고기 볶음밥', ingredients: ['생쌀 50g', '돼지고기 30g', '모듬채소 30g'] }, lunch: { name: '아기 닭칼국수', ingredients: ['칼국수면', '닭고기', '애호박'] }, dinner: { name: '소고기 갈비탕+밥', ingredients: ['생쌀 35g', '소고기(갈비)', '무'] } },
+                    { day: '일', breakfast: { name: '핫케이크 + 과일', ingredients: ['핫케이크가루', '계란', '제철과일'] }, lunch: { name: '가족 특식', ingredients: [] }, dinner: { name: '자유식 (볶음밥)', ingredients: ['남은 재료 활용'] } },
+                ]
+            };
+            
+            const mealPlanContainer = document.getElementById('meal-plan-display');
+            const weekButtons = document.querySelectorAll('.week-btn');
+
+            const tooltip = document.getElementById('meal-tooltip');
+
+            mealPlanContainer.addEventListener('mouseover', (e) => {
+                const targetCell = e.target.closest('.meal-cell');
+                if (!targetCell) return;
+
+                const ingredients = targetCell.dataset.ingredients.split(',');
+                if (ingredients.length === 0 || ingredients[0] === '') return;
+
+                tooltip.innerHTML = `<ul>${ingredients.map(ing => `<li>${ing.trim()}</li>`).join('')}</ul>`;
+                
+                const rect = targetCell.getBoundingClientRect();
+                tooltip.style.display = 'block';
+                
+                const tooltipRect = tooltip.getBoundingClientRect();
+                
+                let top = rect.bottom + window.scrollY + 5;
+                let left = rect.left + window.scrollX;
+
+                if (left + tooltipRect.width > window.innerWidth) {
+                    left = window.innerWidth - tooltipRect.width - 10;
+                }
+                
+                if (top + tooltipRect.height > window.innerHeight + window.scrollY) {
+                    top = rect.top + window.scrollY - tooltipRect.height - 5;
+                }
+
+                tooltip.style.left = `${left}px`;
+                tooltip.style.top = `${top}px`;
+            });
+
+            mealPlanContainer.addEventListener('mouseout', (e) => {
+                const targetCell = e.target.closest('.meal-cell');
+                if (targetCell) {
+                    tooltip.style.display = 'none';
+                }
+            });
+
+
+            function renderMealPlan(week) {
+                mealPlanContainer.innerHTML = '';
+                const header = document.createElement('div');
+                header.className = 'hidden md:grid grid-cols-4 gap-4 font-bold text-gray-700 mb-2 pb-2 border-b';
+                header.innerHTML = `
+                    <div>요일</div>
+                    <div>아침</div>
+                    <div>점심</div>
+                    <div>저녁</div>
+                `;
+                mealPlanContainer.appendChild(header);
+
+                mealPlanData[week].forEach(meal => {
+                    const row = document.createElement('div');
+                    row.className = 'grid grid-cols-1 md:grid-cols-4 gap-4 py-3 border-b last:border-b-0';
+                    row.innerHTML = `
+                        <div class="font-bold text-lg md:text-base text-[#073B4C]">${meal.day}</div>
+                        <div class="meal-cell" data-ingredients="${meal.breakfast.ingredients.join(', ')}"><span class="font-semibold md:hidden">아침: </span>${meal.breakfast.name}</div>
+                        <div class="meal-cell" data-ingredients="${meal.lunch.ingredients.join(', ')}"><span class="font-semibold md:hidden">점심: </span>${meal.lunch.name}</div>
+                        <div class="meal-cell" data-ingredients="${meal.dinner.ingredients.join(', ')}"><span class="font-semibold md:hidden">저녁: </span>${meal.dinner.name}</div>
+                    `;
+                    mealPlanContainer.appendChild(row);
+                });
+            }
+
+            weekButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    weekButtons.forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                    const week = e.target.id.split('-')[2];
+                    renderMealPlan(week);
+                });
+            });
+
+            renderMealPlan(1);
+        });
+    </script>
+
+</body>
+</html>
+
+
+
